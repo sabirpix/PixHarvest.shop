@@ -1,0 +1,10 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin - Products</title><link rel="stylesheet" href="../css/style.css"></head><body>
+<main class="container"><h1>Products</h1><p><a class="btn" href="add-product.html">Add Product</a></p><div id="list"></div></main>
+<script type="module">
+import { firebaseConfig } from '../js/firebase-config.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+import { getFirestore, collection, getDocs, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
+const app = initializeApp(firebaseConfig); const db = getFirestore(app); const list = document.getElementById('list');
+const load = async ()=>{ const snap = await getDocs(collection(db,'products')); let html = '<table class="table"><tr><th>Image</th><th>Name</th><th>Price</th><th>Stock</th><th>Actions</th></tr>'; snap.forEach(d=>{ const p = d.data(); html += `<tr><td><img src="${p.imageUrl||'../images/placeholder.png'}" style="width:80px;height:60px;object-fit:cover;border-radius:6px"></td><td>${p.name}</td><td>₹${p.price}</td><td>${p.stock || 0}</td><td><button data-id="${d.id}" class="del">Delete</button></td></tr>` }); html += '</table>'; list.innerHTML = html; Array.from(document.getElementsByClassName('del')).forEach(bt=>bt.addEventListener('click', async (e)=>{ if(confirm('Delete?')){ await deleteDoc(doc(db,'products', e.target.dataset.id)); load(); }})); }
+load();
+</script></body></html>

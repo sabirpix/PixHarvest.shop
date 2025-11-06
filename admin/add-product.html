@@ -1,0 +1,10 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Add Product - Admin</title><link rel="stylesheet" href="../css/style.css"></head><body>
+<main class="container" style="max-width:640px"><h1>Add Product</h1><form id="product-form"><p><input name="name" placeholder="Product name" required></p><p><input name="category" placeholder="Category"></p><p><textarea name="description" placeholder="Description"></textarea></p><p><input name="price" type="number" placeholder="Price" required></p><p><input name="stock" type="number" placeholder="Stock quantity" required></p><p><input id="image" type="file" accept="image/*"></p><p><button class="btn" type="submit">Save</button></p></form></main>
+<script type="module">
+import { firebaseConfig } from '../js/firebase-config.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js';
+import { getFirestore, addDoc, collection } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
+const app = initializeApp(firebaseConfig); const db = getFirestore(app); const storage = getStorage(app);
+document.getElementById('product-form').addEventListener('submit', async (e)=>{ e.preventDefault(); const f = new FormData(e.target); const file = document.getElementById('image').files[0]; let imageUrl = ''; try{ if(file){ const sref = ref(storage, `products/${Date.now()}_${file.name}`); await uploadBytes(sref, file); imageUrl = await getDownloadURL(sref); } const docRef = await addDoc(collection(db,'products'),{ name: f.get('name'), category: f.get('category'), description: f.get('description'), price: Number(f.get('price')), stock: Number(f.get('stock')), imageUrl: imageUrl, createdAt: new Date() }); alert('Product saved: ' + docRef.id); location.href='products.html'; }catch(err){ console.error(err); alert('Failed: '+err.message) } });
+</script></body></html>

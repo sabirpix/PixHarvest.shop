@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin Signup - PixHarvest</title>
+<link rel="stylesheet" href="css/admin-style.css"></head>
+<body>
+  <div class="auth-card">
+    <h2>Create Admin Account</h2>
+    <form id="signupForm">
+      <input id="name" placeholder="Full name" required>
+      <input id="email" type="email" placeholder="Admin email" required>
+      <input id="password" type="password" placeholder="Password (6+ chars)" required>
+      <button type="submit">Create Account</button>
+    </form>
+    <p class="small" style="text-align:center;margin-top:8px">Already an admin? <a href="admin-login.html">Login</a></p>
+    <p id="msg" class="small" style="text-align:center;color:red"></p>
+  </div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+import { getAuth, createUserWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+import { getFirestore, doc, setDoc } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
+
+const firebaseConfig = {"apiKey": "AIzaSyA5TPkfexV0OAu_YLlY5zVgDTRcuJcPODE", "authDomain": "pixharvest-8f0b3.firebaseapp.com", "databaseURL": "https://pixharvest-8f0b3-default-rtdb.firebaseio.com", "projectId": "pixharvest-8f0b3", "storageBucket": "pixharvest-8f0b3.appspot.com", "messagingSenderId": "725723341167", "appId": "1:725723341167:web:aae812619849d4941a089a", "measurementId": "G-E2SQ98YEFB"};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const msg = document.getElementById('msg');
+document.getElementById('signupForm').addEventListener('submit', async (e)=>{
+  e.preventDefault(); msg.textContent='';
+  const name = document.getElementById('name').value;
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  try{
+    const userCred = await createUserWithEmailAndPassword(auth, email, password);
+    const uid = userCred.user.uid;
+    // create admin record in Firestore
+    await setDoc(doc(db,'admins', uid), { name: name, email: email, createdAt: new Date().toISOString() });
+    // redirect to dashboard
+    location.href = 'admin-dashboard.html';
+  }catch(err){ msg.textContent = err.message; }
+});
+
+// if already logged in, go to dashboard
+onAuthStateChanged(auth, (user)=>{ if(user) location.href='admin-dashboard.html'; });
+</script>
+</body>
+</html>

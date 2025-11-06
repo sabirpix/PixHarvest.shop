@@ -1,0 +1,10 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin - Dashboard</title><link rel="stylesheet" href="../css/style.css"></head><body>
+<main class="container"><h1>Admin Dashboard</h1><div id="stats" class="grid"></div><p><a href="products.html" class="btn">Manage Products</a> <a href="orders.html" class="btn">Manage Orders</a></p></main>
+<script type="module">
+import { firebaseConfig } from '../js/firebase-config.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
+const app = initializeApp(firebaseConfig); const db = getFirestore(app);
+const stats = document.getElementById('stats');
+(async ()=>{ const p = await getDocs(collection(db,'products')); const o = await getDocs(collection(db,'orders')); stats.innerHTML = `<div class="card"><h3>Products</h3><p>${p.size}</p></div><div class="card"><h3>Orders</h3><p>${o.size}</p></div>`; })();
+</script></body></html>
