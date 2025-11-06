@@ -1,0 +1,18 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Signup - PixHarvest</title><link rel="stylesheet" href="css/style.css"></head><body>
+<div id="header"></div>
+<main class="container" style="max-width:420px;margin-top:40px">
+  <h1>Create account</h1>
+  <form id="signup-form">
+    <p><input name="name" placeholder="Full name" required></p>
+    <p><input name="email" placeholder="Email" required></p>
+    <p><input name="password" placeholder="Password" type="password" required></p>
+    <p><button class="btn" type="submit">Sign up</button></p>
+  </form>
+  <p class="small"><a href="login.html">Already have an account? Login</a></p>
+</main>
+<div id="footer"></div>
+<script type="module">
+import { renderHeader, renderFooter } from './js/ui.js';
+document.getElementById('header').innerHTML = renderHeader(); document.getElementById('footer').innerHTML = renderFooter();
+document.getElementById('signup-form').addEventListener('submit',(e)=>{ e.preventDefault(); alert('Signup not wired; implement Firebase Auth'); });
+</script></body></html>

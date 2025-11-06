@@ -1,0 +1,115 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Checkout - PixHarvest</title><link rel="stylesheet" href="css/style.css"></head><body>
+<div id="header"></div>
+<main class="container"><h1>Checkout</h1><div id="summary"></div>
+<form id="checkout-form">
+  <p><input name="name" placeholder="Full name" required></p>
+  <p><input name="phone" placeholder="Phone" required></p>
+  <p><input name="address" placeholder="Delivery address" required></p>
+  <p>
+    <label><input type="radio" name="payment" value="COD" checked> Cash on Delivery</label><br>
+    <label><input type="radio" name="payment" value="UPI"> Pay by UPI</label><br>
+    <label><input type="radio" name="payment" value="RAZORPAY"> Pay with Razorpay</label>
+  </p>
+  <p><button class="btn" id="pay-btn" type="submit">Confirm Order</button></p>
+</form>
+<div id="upi-section" style="display:none;margin-top:12px">
+  <h3>Pay via UPI</h3>
+  <p>Scan the QR code or click the link to open your UPI app.</p>
+  <img id="upi-qr" alt="UPI QR" src="" style="width:200px;height:200px;border:1px solid #eee"><br>
+  <a id="upi-link" href="#" target="_blank">Pay with UPI app</a>
+</div>
+</main>
+<div id="footer"></div>
+<script type="module">
+import { renderHeader, renderFooter } from './js/ui.js';
+import { firebaseConfig } from './js/firebase-config.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
+import { RAZORPAY_KEY_ID, UPI_VPA, MERCHANT_NAME } from './js/payment-config.js';
+
+document.getElementById('header').innerHTML = renderHeader();
+document.getElementById('footer').innerHTML = renderFooter();
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const cart = JSON.parse(localStorage.getItem('cart')||'[]');
+const summary = document.getElementById('summary');
+if(cart.length===0){ summary.innerHTML = '<p>Your cart is empty.</p>'; document.getElementById('checkout-form').style.display='none'; } else {
+  let html = '<ul>' + cart.map(it=>`<li>${it.name} x ${it.quantity} — ₹${it.price*it.quantity}</li>`).join('') + '</ul>';
+  html += `<p><strong>Total: ₹${cart.reduce((s,i)=>s+i.price*i.quantity,0)}</strong></p>`;
+  summary.innerHTML = html;
+}
+
+document.querySelectorAll('input[name="payment"]').forEach(r=>{ r.addEventListener('change', (e)=>{ if(e.target.value === 'UPI'){ showUpi(cart.reduce((s,i)=>s+i.price*i.quantity,0)); } else { document.getElementById('upi-section').style.display='none'; } }) });
+
+function showUpi(amount){
+  const am = amount;
+  const upiLink = `upi://pay?pa=${encodeURIComponent(UPI_VPA)}&pn=${encodeURIComponent(MERCHANT_NAME)}&tn=${encodeURIComponent('Order from PixHarvest')}&am=${encodeURIComponent(am)}&cu=INR`;
+  const qrSrc = `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(upiLink)}`;
+  document.getElementById('upi-qr').src = qrSrc;
+  const a = document.getElementById('upi-link'); a.href = upiLink; a.textContent = 'Open UPI app to pay';
+  document.getElementById('upi-section').style.display = 'block';
+}
+
+document.getElementById('checkout-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const data = new FormData(e.target);
+  const paymentMethod = data.get('payment');
+  const orderPayload = {
+    items: cart,
+    totalAmount: cart.reduce((s,i)=>s+i.price*i.quantity,0),
+    customerName: data.get('name'),
+    phone: data.get('phone'),
+    address: data.get('address'),
+    paymentStatus: paymentMethod === 'COD' ? 'Pending' : 'Payment Pending',
+    deliveryStatus: 'Pending',
+    estimatedDelivery: '',
+    paymentMethod: paymentMethod,
+    createdAt: serverTimestamp()
+  };
+
+  if(paymentMethod === 'RAZORPAY'){
+    if(!RAZORPAY_KEY_ID || RAZORPAY_KEY_ID.includes('REPLACE')){ alert('Razorpay key not set. Please configure js/payment-config.js'); return; }
+    await loadScript('https://checkout.razorpay.com/v1/checkout.js');
+    const options = {
+      key: RAZORPAY_KEY_ID,
+      amount: orderPayload.totalAmount * 100,
+      currency: 'INR',
+      name: MERCHANT_NAME,
+      description: 'PixHarvest Order Payment',
+      handler: async function (response){
+        orderPayload.paymentStatus = 'Paid';
+        orderPayload.razorpay = response;
+        try{
+          const docRef = await addDoc(collection(db,'orders'), orderPayload);
+          localStorage.removeItem('cart');
+          location.href = 'success.html?order=' + encodeURIComponent(docRef.id);
+        }catch(err){ console.error(err); alert('Order save failed: ' + err.message); }
+      },
+      prefill: { name: orderPayload.customerName, contact: orderPayload.phone },
+    };
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+    return;
+  }
+
+  if(paymentMethod === 'UPI'){
+    try{
+      const docRef = await addDoc(collection(db,'orders'), orderPayload);
+      showUpi(orderPayload.totalAmount);
+      localStorage.removeItem('cart');
+      setTimeout(()=>{ location.href = 'success.html?order=' + encodeURIComponent(docRef.id); }, 3000);
+    }catch(err){ console.error(err); alert('Failed to save order: ' + err.message); }
+    return;
+  }
+
+  try{
+    const docRef = await addDoc(collection(db,'orders'), orderPayload);
+    localStorage.removeItem('cart');
+    location.href = 'success.html?order=' + encodeURIComponent(docRef.id);
+  }catch(err){ console.error(err); alert('Failed to place order'); }
+});
+
+function loadScript(src){ return new Promise((res,rej)=>{ if(window.Razorpay) return res(); const s=document.createElement('script'); s.src=src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }) }
+</script></body></html>

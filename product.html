@@ -1,0 +1,44 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Product - PixHarvest</title><link rel="stylesheet" href="css/style.css"></head><body>
+<div id="header"></div>
+<main class="container"><div id="product"></div></main>
+<div id="footer"></div>
+<script type="module">
+import { renderHeader, renderFooter } from './js/ui.js';
+import { firebaseConfig } from './js/firebase-config.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
+document.getElementById('header').innerHTML = renderHeader();
+document.getElementById('footer').innerHTML = renderFooter();
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const params = new URLSearchParams(location.search);
+const id = params.get('id');
+const productEl = document.getElementById('product');
+(async ()=>{
+  if(!id){ productEl.innerHTML='<p>Product not specified.</p>'; return; }
+  const d = await getDoc(doc(db,'products',id));
+  if(!d.exists()){ productEl.innerHTML='<p>Product not found.</p>'; return; }
+  const p = d.data();
+  productEl.innerHTML = `
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      <img src="${p.imageUrl||'images/placeholder.png'}" style="width:320px;border-radius:8px">
+      <div style="flex:1">
+        <h2>${p.name}</h2>
+        <p class="small">₹${p.price} • Stock: ${p.stock || 0}</p>
+        <p>${p.description||''}</p>
+        <p><label>Qty <input id="qty" type="number" value="1" min="1" style="width:80px"></label></p>
+        <p><button id="add" class="btn">Add to Cart</button> <a id="buyNow" class="btn" href="#">Buy Now</a></p>
+      </div>
+    </div>
+  `;
+  document.getElementById('add').addEventListener('click', ()=>{
+    const qty = parseInt(document.getElementById('qty').value||1);
+    const cart = JSON.parse(localStorage.getItem('cart')||'[]');
+    const idx = cart.findIndex(it=>it.productId===id);
+    if(idx>-1){ cart[idx].quantity += qty; } else { cart.push({productId:id,name:p.name,price:p.price,quantity:qty,imageUrl:p.imageUrl||''}); }
+    localStorage.setItem('cart', JSON.stringify(cart));
+    alert('Added to cart');
+  });
+  document.getElementById('buyNow').addEventListener('click', ()=>{ const qty = parseInt(document.getElementById('qty').value||1); localStorage.setItem('cart', JSON.stringify([{productId:id,name:p.name,price:p.price,quantity:qty,imageUrl:p.imageUrl||''}])); location.href='checkout.html'; });
+})();
+</script></body></html>

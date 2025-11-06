@@ -1,0 +1,50 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Products - PixHarvest</title><link rel="stylesheet" href="css/style.css"></head><body>
+<div id="header"></div>
+<main class="container">
+  <h1>Products</h1>
+  <div style="margin:12px 0;display:flex;gap:8px;flex-wrap:wrap">
+    <input id="search" placeholder="Search products..." style="flex:1;min-width:180px">
+    <select id="category" style="min-width:160px"><option value="">All categories</option></select>
+  </div>
+  <div id="products" class="grid"></div>
+</main>
+<div id="footer"></div>
+<script type="module">
+import { renderHeader, renderFooter } from './js/ui.js';
+import { firebaseConfig } from './js/firebase-config.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
+document.getElementById('header').innerHTML = renderHeader('products');
+document.getElementById('footer').innerHTML = renderFooter();
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const productsEl = document.getElementById('products');
+const catEl = document.getElementById('category');
+const searchEl = document.getElementById('search');
+const load = async ()=>{
+  productsEl.innerHTML='';
+  const snap = await getDocs(collection(db,'products'));
+  const cats = new Set();
+  snap.forEach(doc=>{
+    const p = doc.data();
+    cats.add(p.category||'Uncategorized');
+    const div = document.createElement('div'); div.className='card';
+    div.innerHTML = `
+      <img src="${p.imageUrl||'images/placeholder.png'}" alt="${p.name}">
+      <h3>${p.name}</h3>
+      <p class="small">₹${p.price} • Stock: ${p.stock || 0}</p>
+      <p><a class="btn" href="product.html?id=${doc.id}">View</a></p>
+    `;
+    productsEl.appendChild(div);
+  });
+  catEl.innerHTML = '<option value="">All categories</option>' + [...cats].map(c=>`<option>${c}</option>`).join('');
+}
+searchEl.addEventListener('input', ()=>{
+  const q = searchEl.value.toLowerCase();
+  Array.from(productsEl.children).forEach(card=>{
+    const t = card.querySelector('h3').textContent.toLowerCase();
+    card.style.display = t.includes(q) ? '' : 'none';
+  })
+})
+load();
+</script></body></html>

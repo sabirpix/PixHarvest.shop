@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PixHarvest — Home</title><link rel="stylesheet" href="css/style.css"></head>
+<body>
+<div id="header"></div>
+<main class="container">
+  <section class="hero">
+    <div style="flex:1">
+      <h1>Traditional Assamese flavors — delivered to your door</h1>
+      <p class="small">Handcrafted by village artisans. Fresh, authentic, and sustainable.</p>
+      <p style="margin-top:12px"><a class="btn" href="products.html">Shop Now</a></p>
+    </div>
+    <img src="images/banner.jpg" alt="Banner">
+  </section>
+
+  <section>
+    <h2>Featured Products</h2>
+    <div id="featured" class="grid"></div>
+  </section>
+</main>
+<div id="footer"></div>
+
+<script type="module">
+import { renderHeader, renderFooter } from './js/ui.js';
+import { firebaseConfig } from './js/firebase-config.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+import { getFirestore, collection, getDocs, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
+document.getElementById('header').innerHTML = renderHeader('home');
+document.getElementById('footer').innerHTML = renderFooter();
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const featuredEl = document.getElementById('featured');
+(async ()=>{
+  try{
+    const q = query(collection(db,'products'), orderBy('createdAt','desc'), limit(6));
+    const snap = await getDocs(q);
+    snap.forEach(doc=>{
+      const p = doc.data();
+      const div = document.createElement('div'); div.className='card';
+      div.innerHTML = `
+        <img src="${p.imageUrl||'images/placeholder.png'}" alt="${p.name}">
+        <h3>${p.name}</h3>
+        <p class="small">₹${p.price} • Stock: ${p.stock || 0}</p>
+        <p><a class="btn" href="product.html?id=${doc.id}">View</a></p>
+      `;
+      featuredEl.appendChild(div);
+    })
+  }catch(e){ console.error(e) }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Profile - PixHarvest</title><link rel="stylesheet" href="css/style.css"></head><body>
+<div id="header"></div>
+<main class="container"><h1>Your Orders</h1><div id="orders"></div></main>
+<div id="footer"></div>
+<script type="module">
+import { renderHeader, renderFooter } from './js/ui.js';
+import { firebaseConfig } from './js/firebase-config.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
+document.getElementById('header').innerHTML = renderHeader(); document.getElementById('footer').innerHTML = renderFooter();
+const app = initializeApp(firebaseConfig); const db = getFirestore(app);
+const ordersEl = document.getElementById('orders');
+(async ()=>{ const snap = await getDocs(collection(db,'orders')); let html = '<table class="table"><tr><th>Order</th><th>Name</th><th>Total</th><th>Status</th></tr>'; snap.forEach(d=>{ const o = d.data(); html += `<tr><td>${d.id}</td><td>${o.customerName}</td><td>₹${o.totalAmount}</td><td>${o.deliveryStatus || o.paymentStatus}</td></tr>` }); html += '</table>'; ordersEl.innerHTML = html; })();
+</script></body></html>

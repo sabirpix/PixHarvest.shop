@@ -1,0 +1,32 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cart - PixHarvest</title><link rel="stylesheet" href="css/style.css"></head><body>
+<div id="header"></div>
+<main class="container"><h1>Your Cart</h1><div id="cart-list"></div><div style="margin-top:16px"><a class="btn" id="checkout" href="checkout.html">Proceed to Checkout</a></div></main>
+<div id="footer"></div>
+<script type="module">
+import { renderHeader, renderFooter } from './js/ui.js';
+document.getElementById('header').innerHTML = renderHeader();
+document.getElementById('footer').innerHTML = renderFooter();
+const cartList = document.getElementById('cart-list');
+const render = ()=>{
+  const cart = JSON.parse(localStorage.getItem('cart')||'[]');
+  if(cart.length===0){ cartList.innerHTML='<p>Your cart is empty.</p>'; return; }
+  let html = '<table class="table"><tr><th>Product</th><th>Price</th><th>Qty</th><th>Total</th><th></th></tr>';
+  let total = 0;
+  cart.forEach((it,i)=>{
+    const line = it.price * it.quantity; total += line;
+    html += `<tr><td style="vertical-align:middle"><img src="${it.imageUrl||'images/placeholder.png'}" style="width:80px;height:60px;object-fit:cover;border-radius:6px;margin-right:8px;vertical-align:middle"> ${it.name}</td><td>₹${it.price}</td><td><input data-i="${i}" class="qty" type="number" value="${it.quantity}" min="1" style="width:60px"></td><td>₹${line}</td><td><button data-i="${i}" class="remove">Remove</button></td></tr>`;
+  })
+  html += `<tr><td colspan="3" style="text-align:right"><strong>Total</strong></td><td>₹${total}</td><td></td></tr></table>`;
+  cartList.innerHTML = html;
+  Array.from(document.getElementsByClassName('qty')).forEach(inp=>{
+    inp.addEventListener('change', (e)=>{
+      const i = e.target.dataset.i; const val = parseInt(e.target.value||1);
+      const cart = JSON.parse(localStorage.getItem('cart')||'[]'); cart[i].quantity = val; localStorage.setItem('cart', JSON.stringify(cart)); render();
+    })
+  })
+  Array.from(document.getElementsByClassName('remove')).forEach(bt=>{
+    bt.addEventListener('click', (e)=>{ const i=e.target.dataset.i; const cart = JSON.parse(localStorage.getItem('cart')||'[]'); cart.splice(i,1); localStorage.setItem('cart', JSON.stringify(cart)); render(); })
+  })
+}
+render();
+</script></body></html>

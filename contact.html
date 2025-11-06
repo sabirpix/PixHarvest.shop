@@ -1,0 +1,13 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Contact - PixHarvest</title><link rel="stylesheet" href="css/style.css"></head><body>
+<div id="header"></div>
+<main class="container"><h1>Contact</h1><form id="contact"><p><input name="name" placeholder="Your name" required></p><p><input name="email" placeholder="Email" required></p><p><textarea name="message" placeholder="Message" required></textarea></p><p><button class="btn" type="submit">Send</button></p></form></main>
+<div id="footer"></div>
+<script type="module">
+import { renderHeader, renderFooter } from './js/ui.js';
+import { firebaseConfig } from './js/firebase-config.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+import { getFirestore, addDoc, collection, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
+document.getElementById('header').innerHTML = renderHeader(); document.getElementById('footer').innerHTML = renderFooter();
+const app = initializeApp(firebaseConfig); const db = getFirestore(app);
+document.getElementById('contact').addEventListener('submit', async (e)=>{ e.preventDefault(); const f = new FormData(e.target); try{ await addDoc(collection(db,'contacts'), { name: f.get('name'), email: f.get('email'), message: f.get('message'), createdAt: serverTimestamp() }); alert('Message sent'); e.target.reset(); }catch(err){ alert('Failed: '+err.message) } });
+</script></body></html>

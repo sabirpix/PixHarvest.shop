@@ -1,0 +1,17 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Order Confirmed - PixHarvest</title><link rel="stylesheet" href="css/style.css"></head><body>
+<div id="header"></div>
+<main class="container" style="text-align:center;padding:40px">
+  <h1 style="color:green">✓ Order Confirmed</h1>
+  <p>Thank you — your order has been received.</p>
+  <p id="order-id" class="small"></p>
+  <p style="margin-top:12px"><a class="btn" href="index.html">Back to Home</a></p>
+</main>
+<div id="footer"></div>
+<script type="module">
+import { renderHeader, renderFooter } from './js/ui.js';
+document.getElementById('header').innerHTML = renderHeader();
+document.getElementById('footer').innerHTML = renderFooter();
+const params = new URLSearchParams(location.search);
+const id = params.get('order');
+if(id){ document.getElementById('order-id').textContent = 'Order ID: ' + id; }
+</script></body></html>
