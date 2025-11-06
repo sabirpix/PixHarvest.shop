@@ -1,1 +1,0 @@
-# PixHarvest.shop
